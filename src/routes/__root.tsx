@@ -3,7 +3,7 @@ import { Topbar } from '../components/topbar/Topbar';
 
 export const Route = createRootRoute({
   component: () => (
-    <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main className="max-w-7xl mx-auto py-3 sm:py-6 sm:px-6 lg:px-8">
       <Topbar />
       <Outlet />
     </main>
