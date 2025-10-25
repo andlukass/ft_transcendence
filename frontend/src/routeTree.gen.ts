@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TournamentRouteImport } from './routes/tournament'
 import { Route as MatchRouteImport } from './routes/match'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TournamentRoute = TournamentRouteImport.update({
+  id: '/tournament',
+  path: '/tournament',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MatchRoute = MatchRouteImport.update({
   id: '/match',
   path: '/match',
@@ -26,31 +32,42 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/match': typeof MatchRoute
+  '/tournament': typeof TournamentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/match': typeof MatchRoute
+  '/tournament': typeof TournamentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/match': typeof MatchRoute
+  '/tournament': typeof TournamentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/match'
+  fullPaths: '/' | '/match' | '/tournament'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/match'
-  id: '__root__' | '/' | '/match'
+  to: '/' | '/match' | '/tournament'
+  id: '__root__' | '/' | '/match' | '/tournament'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MatchRoute: typeof MatchRoute
+  TournamentRoute: typeof TournamentRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tournament': {
+      id: '/tournament'
+      path: '/tournament'
+      fullPath: '/tournament'
+      preLoaderRoute: typeof TournamentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/match': {
       id: '/match'
       path: '/match'
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MatchRoute: MatchRoute,
+  TournamentRoute: TournamentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
