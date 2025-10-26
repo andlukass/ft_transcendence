@@ -131,7 +131,7 @@ function Match() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex justify-center">
             <div className="text-center">
               <div className="text-blue-600 text-4xl mb-4">🎮</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Current Match</h3>
@@ -146,31 +146,6 @@ function Match() {
                 )}
               </div>
             </div>
-
-            <div className="text-center">
-              <div className="text-green-600 text-4xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Match History</h3>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="text-gray-600">No matches played yet</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <button
-              type="button"
-              onClick={connectToMatch}
-              disabled={isConnected}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors mr-4"
-            >
-              Find Match
-            </button>
-            <button
-              type="button"
-              className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors"
-            >
-              View Statistics
-            </button>
           </div>
         </div>
       </div>
