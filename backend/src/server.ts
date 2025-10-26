@@ -11,7 +11,7 @@ const fastify = Fastify({ logger: false });
 await fastify.register(websocket);
 
 fastify.get("/health", async (_request, _reply) => {
-	return { status: "ok", message: "Server is running" };
+  return { status: "ok", message: "Server is running" };
 });
 
 // Register WebSocket routes
