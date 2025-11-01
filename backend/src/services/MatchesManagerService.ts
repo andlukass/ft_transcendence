@@ -5,12 +5,25 @@ import { MatchService } from "./MatchService";
 class MatchesManagerService {
   private ongoingMatches: Map<string, MatchService> = new Map();
 
-  addPlayer(playerName: string, conn: WebSocket.WebSocket): string | null {
+  addPlayer(
+    playerName: string,
+    conn: WebSocket.WebSocket,
+    isSinglePlayer?: boolean
+  ): string | null {
     // Search for a match with 0 or 1 player
     let availableMatchId: string | null = null;
 
+    if (isSinglePlayer) {
+      availableMatchId = randomUUID();
+      const match = new MatchService(availableMatchId);
+      match.addPlayer({ name: playerName, matchId: availableMatchId, conn });
+      match.initMatch(isSinglePlayer);
+      this.ongoingMatches.set(availableMatchId, match);
+      return availableMatchId;
+    }
+
     for (const [matchId, match] of this.ongoingMatches.entries()) {
-      if (match.getPlayersLength() < 2) {
+      if (!match.getIsStarted()) {
         availableMatchId = matchId;
         break;
       }

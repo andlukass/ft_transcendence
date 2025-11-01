@@ -154,14 +154,20 @@ export function Local(): HTMLElement {
           </div>
 
           <div class="mb-8">
-            <div class="flex justify-center">
+            <div class="flex flex-col gap-4 justify-center">
               <button
                 type="button"
                 id="connect-btn"
-                ${isConnected ? "disabled" : ""}
                 class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer"
               >
-                ${isConnected ? "Connected" : "Start Local Match"}
+                Start Local Multiplayer Match
+              </button>
+              <button
+                type="button"
+                id="connect-singleplayer-btn"
+                class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-6 rounded-lg transition-colors cursor-pointer"
+              >
+                Start Local Singleplayer Match
               </button>
             </div>
             ${error ? `<p class="text-red-600 mt-2">${error}</p>` : ""}
@@ -197,6 +203,12 @@ export function Local(): HTMLElement {
     const connectBtn = container.querySelector("#connect-btn") as HTMLButtonElement;
     if (connectBtn) {
       connectBtn.addEventListener("click", connectToMatch);
+    }
+    const connectSinglePlayerBtn = container.querySelector(
+      "#connect-singleplayer-btn"
+    ) as HTMLButtonElement;
+    if (connectSinglePlayerBtn) {
+      connectSinglePlayerBtn.addEventListener("click", connectToSinglePlayerMatch);
     }
   };
 
@@ -341,6 +353,85 @@ export function Local(): HTMLElement {
             matchId = data.matchId;
             console.log("Match ID:", data.matchId);
             checkBothConnected();
+            updateView();
+          } else if (data.error) {
+            error = data.error;
+            updateView();
+          } else if (data.winner) {
+            winner = data.winner;
+            console.log("Winner:", data.winner);
+            updateView();
+          } else if (data.type === "gameState" && data.gameState) {
+            gameState = data.gameState;
+            if (gameComponent?.update && gameState) {
+              gameComponent.update(gameState);
+            } else {
+              updateView();
+            }
+          }
+        } catch (err) {
+          console.error("Error parsing left message:", err);
+        }
+      };
+
+      wsLeft.onerror = (err) => {
+        console.error("WebSocket Left error:", err);
+        error = "Failed to connect left player";
+        isConnected = false;
+        updateView();
+      };
+
+      wsLeft.onclose = () => {
+        console.log("WebSocket Left disconnected");
+        leftConnected = false;
+        isConnected = false;
+        wsLeft = null;
+        updateView();
+      };
+    } catch (err) {
+      console.error("Error connecting to WebSocket:", err);
+      error = "Failed to establish connection";
+      updateView();
+    }
+  };
+
+  const connectToSinglePlayerMatch = () => {
+    try {
+      // Close existing connections if any
+      if (wsLeft) {
+        wsLeft.close();
+      }
+      if (wsRight) {
+        wsRight.close();
+      }
+
+      error = null;
+
+      // Connect only the left player with isSinglePlayer flag
+      wsLeft = new WebSocket(
+        `ws://localhost:3000/match?playerName=${encodeURIComponent("LocalPlayerLeft")}&isSinglePlayer=true`
+      );
+
+      let leftConnected = false;
+
+      // Setup left player socket
+      wsLeft.onopen = () => {
+        console.log("WebSocket Left connected (Singleplayer)");
+        leftConnected = true;
+      };
+
+      wsLeft.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("Left player received:", data);
+
+          if (data.matchId) {
+            matchId = data.matchId;
+            console.log("Match ID:", data.matchId);
+            if (leftConnected && matchId) {
+              isConnected = true;
+            }
+            console.log("Match ID:", matchId);
             updateView();
           } else if (data.error) {
             error = data.error;

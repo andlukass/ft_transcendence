@@ -34,6 +34,10 @@ export class MatchService {
     return this.players.length;
   }
 
+  getIsStarted(): boolean {
+    return this.game !== null;
+  }
+
   removePlayer(name: string): boolean {
     const player = this.players.find((player) => player.name === name);
     if (!player) return false;
@@ -54,9 +58,11 @@ export class MatchService {
     return this.game.getGameState();
   }
 
-  async initMatch(): Promise<void> {
-    this.game = new GameService();
-    console.log(`Match ${this.matchId} initialized with 2 players`);
+  async initMatch(isSinglePlayer?: boolean): Promise<void> {
+    this.game = new GameService(isSinglePlayer);
+    console.log(
+      `Match ${this.matchId} initialized with ${isSinglePlayer ? 1 : 2} player${isSinglePlayer ? "" : "s"}`
+    );
 
     while (!this.game.getGameState().isEnded) {
       if (this.game.getGameState().score.left === MAX_SCORE) {
@@ -66,6 +72,9 @@ export class MatchService {
       if (this.game.getGameState().score.right === MAX_SCORE) {
         this.endMatch(this.players[1].name);
         return;
+      }
+      if (this.game.getGameState().isSinglePlayer) {
+        this.game.moveAI();
       }
       for (const player of this.players) {
         player.conn.send(

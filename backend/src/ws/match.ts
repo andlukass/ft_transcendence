@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import type * as WebSocket from "ws";
 import { matchesService } from "../services/MatchesManagerService";
 
 interface MatchResponse {
@@ -8,27 +7,25 @@ interface MatchResponse {
   error?: string;
 }
 
-const connections = new Map<string, WebSocket.WebSocket>();
-
 export default async function (fastify: FastifyInstance) {
   fastify.get("/match", { websocket: true }, (conn, req) => {
-    const { playerName } = req.query as { playerName?: string };
+    const { playerName, isSinglePlayer } = req.query as {
+      playerName?: string;
+      isSinglePlayer?: boolean;
+    };
     if (!playerName) {
       conn.close(1008, "Player name is required");
       return;
     }
     const formattedPlayerName = playerName.trim();
-    if (connections.has(formattedPlayerName)) {
-      conn.close(1008, "Player already connected");
-      return;
-    }
-    const matchId = matchesService.addPlayer(formattedPlayerName, conn);
+    const matchId = matchesService.addPlayer(formattedPlayerName, conn, isSinglePlayer);
     if (!matchId) {
       conn.close(1011, "Failed to create or join match");
       return;
     }
-    connections.set(formattedPlayerName, conn);
-    console.log(`Player ${formattedPlayerName} joined match ${matchId}`);
+    console.log(
+      `Player ${formattedPlayerName} joined match ${matchId}, singleplayer1: ${isSinglePlayer}`
+    );
 
     conn.send(JSON.stringify({ matchId, playerName } as MatchResponse));
 
@@ -51,13 +48,11 @@ export default async function (fastify: FastifyInstance) {
 
     conn.on("close", () => {
       matchesService.removePlayer(matchId, formattedPlayerName);
-      connections.delete(formattedPlayerName);
     });
 
     conn.on("error", (err: Error) => {
       console.error(err);
       matchesService.removePlayer(matchId, formattedPlayerName);
-      connections.delete(formattedPlayerName);
       conn.close(1011, "Socket error");
     });
   });

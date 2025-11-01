@@ -2,13 +2,14 @@ const PADDLE_WIDTH = 10;
 const PADDLE_HEIGHT = 100;
 
 const PADDLE_SPEED = 40;
-const BALL_SPEED = 20;
 const BALL_RADIUS = 10;
 
 const GAME_WIDTH = 1000;
 const GAME_HEIGHT = 500;
 
-export const MAX_SCORE = 100;
+export const MAX_SCORE = 7;
+
+const AI_MOVE_DELAY_MS = 200;
 
 export type Paddle = {
   x: number;
@@ -20,6 +21,7 @@ export type Ball = {
   y: number;
   vx: number;
   vy: number;
+  speed: number;
 };
 
 export type Score = {
@@ -33,6 +35,7 @@ export type GameState = {
   ball: Ball;
   score: Score;
   isEnded: boolean;
+  isSinglePlayer: boolean;
 };
 
 export class GameService {
@@ -41,13 +44,16 @@ export class GameService {
   private score: Score;
   private ball: Ball;
   private isEnded: boolean;
+  private isSinglePlayer: boolean;
+  private lastAIMoveTime: number = 0;
 
-  constructor() {
+  constructor(isSinglePlayer: boolean = false) {
     const paddleY = (GAME_HEIGHT - PADDLE_HEIGHT) / 2;
+    this.isSinglePlayer = isSinglePlayer;
     this.leftPaddle = { x: 0, y: paddleY };
     this.rightPaddle = { x: GAME_WIDTH - PADDLE_WIDTH, y: paddleY };
     this.score = { left: 0, right: 0 };
-    this.ball = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2, vx: 0, vy: 0 };
+    this.ball = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2, vx: 0, vy: 0, speed: 20 };
     this.isEnded = false;
     this.resetBallAndPaddles();
     this.startBall();
@@ -57,6 +63,7 @@ export class GameService {
     // Atualiza a posição da bola baseada na velocidade
     this.ball.x += this.ball.vx;
     this.ball.y += this.ball.vy;
+    this.ball.speed += 0.1;
 
     // Colisão com paredes superior e inferior (bounce)
     if (this.ball.y - BALL_RADIUS <= 0) {
@@ -80,8 +87,8 @@ export class GameService {
       // Ajusta vy baseado na posição de impacto no paddle
       const hitPos = (this.ball.y - this.leftPaddle.y) / PADDLE_HEIGHT; // 0 a 1
       const angle = ((hitPos - 0.5) * Math.PI) / 3; // -60° a +60°
-      this.ball.vx = Math.abs(Math.cos(angle)) * BALL_SPEED;
-      this.ball.vy = Math.sin(angle) * BALL_SPEED;
+      this.ball.vx = Math.abs(Math.cos(angle)) * this.ball.speed;
+      this.ball.vy = Math.sin(angle) * this.ball.speed;
       return; // Sai da função, não marca ponto
     }
 
@@ -97,8 +104,8 @@ export class GameService {
       // Ajusta vy baseado na posição de impacto no paddle
       const hitPos = (this.ball.y - this.rightPaddle.y) / PADDLE_HEIGHT; // 0 a 1
       const angle = ((hitPos - 0.5) * Math.PI) / 3; // -60° a +60°
-      this.ball.vx = -Math.abs(Math.cos(angle)) * BALL_SPEED;
-      this.ball.vy = Math.sin(angle) * BALL_SPEED;
+      this.ball.vx = -Math.abs(Math.cos(angle)) * this.ball.speed;
+      this.ball.vy = Math.sin(angle) * this.ball.speed;
       return; // Sai da função, não marca ponto
     }
 
@@ -125,7 +132,7 @@ export class GameService {
     this.rightPaddle = { x: GAME_WIDTH - PADDLE_WIDTH, y: paddleY };
 
     // Reseta a bola para o centro
-    this.ball = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2, vx: 0, vy: 0 };
+    this.ball = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2, vx: 0, vy: 0, speed: 20 };
     this.startBall();
   }
 
@@ -136,8 +143,35 @@ export class GameService {
     // Define um ângulo aleatório entre -30° e +30°
     const angle = ((Math.random() - 0.5) * Math.PI) / 3;
 
-    this.ball.vx = direction * Math.cos(angle) * BALL_SPEED;
-    this.ball.vy = Math.sin(angle) * BALL_SPEED;
+    this.ball.vx = direction * Math.cos(angle) * this.ball.speed;
+    this.ball.vy = Math.sin(angle) * this.ball.speed;
+  }
+
+  moveAI() {
+    const state = this.getGameState();
+    if (!state.isSinglePlayer) return;
+
+    const { ball, rightPaddle } = state;
+
+    // só reage se a bola estiver vindo pra direita
+    if (ball.vx <= 0) return;
+
+    const paddleCenter = rightPaddle.y + 50; // metade do paddle
+    const distance = ball.y - paddleCenter;
+
+    // se já está quase alinhado, não faz nada
+    if (Math.abs(distance) < 10) return;
+
+    // Verifica se passou tempo suficiente desde a última movimentação
+    const now = Date.now();
+    if (now - this.lastAIMoveTime < AI_MOVE_DELAY_MS) return;
+
+    // chance pequena de "errar" e não mover
+    if (Math.random() < 0.05) return;
+
+    // move um passo na direção da bola
+    this.updatePaddle("right", distance < 0 ? "up" : "down");
+    this.lastAIMoveTime = now;
   }
 
   updatePaddle(paddle: "left" | "right", move: "up" | "down") {
@@ -165,6 +199,7 @@ export class GameService {
       score: this.score,
       ball: this.ball,
       isEnded: this.isEnded,
+      isSinglePlayer: this.isSinglePlayer,
     };
   }
 }
