@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type * as WebSocket from "ws";
-import { matchesService } from "../services/MatchesService";
+import { matchesService } from "../services/MatchesManagerService";
 
 interface MatchResponse {
   matchId?: string;
@@ -32,7 +32,7 @@ export default async function (fastify: FastifyInstance) {
 
     conn.send(JSON.stringify({ matchId, playerName } as MatchResponse));
 
-    conn.on("message", (raw: Buffer) => {
+    conn.on("message", (_raw: Buffer) => {
       // processa comandos posteriores
     });
 

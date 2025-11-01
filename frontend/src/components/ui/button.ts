@@ -1,7 +1,5 @@
-import type React from "react";
-
-interface ButtonProps {
-  children: React.ReactNode;
+export interface ButtonProps {
+  text: string;
   onClick?: () => void;
   type?: "button" | "submit" | "reset";
   variant?: "primary" | "danger";
@@ -11,14 +9,19 @@ interface ButtonProps {
 }
 
 export function Button({
-  children,
+  text,
   onClick,
   type = "button",
   variant = "primary",
   size = "md",
   disabled = false,
   className = "",
-}: ButtonProps) {
+}: ButtonProps): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.textContent = text;
+  btn.type = type;
+  btn.disabled = disabled;
+
   const baseClasses = "cursor-pointer font-bold rounded-lg transition-colors";
 
   const variantClasses = {
@@ -34,12 +37,12 @@ export function Button({
 
   const disabledClasses = disabled ? "opacity-50 cursor-not-allowed" : "";
 
-  const combinedClasses =
+  btn.className =
     `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className}`.trim();
 
-  return (
-    <button type={type} onClick={onClick} disabled={disabled} className={combinedClasses}>
-      {children}
-    </button>
-  );
+  if (onClick && !disabled) {
+    btn.addEventListener("click", onClick);
+  }
+
+  return btn;
 }
