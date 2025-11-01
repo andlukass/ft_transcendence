@@ -31,3 +31,10 @@ export function initDarkMode(): void {
   const isDark = getDarkMode();
   setDarkMode(isDark);
 }
+
+export function isMobile(): boolean {
+  return (
+    window.innerWidth < 768 ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  );
+}

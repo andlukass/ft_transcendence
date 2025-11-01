@@ -1,5 +1,7 @@
 import { TournamentWinner } from "../components/tournament/TournamentWinner";
+import { PlayerControls } from "../components/ui/PlayerControls";
 import { Game, type GameState } from "../game/Game";
+import { isMobile } from "../lib/utils";
 
 let wsLeft: WebSocket | null = null;
 let wsRight: WebSocket | null = null;
@@ -46,6 +48,29 @@ export function Local(): HTMLElement {
       `;
       gameContainer.appendChild(playerInfo);
 
+      // Player1 mobile controls (top)
+      let player1Controls: HTMLElement | null = null;
+      if (isMobile()) {
+        player1Controls = PlayerControls({
+          leftButtonId: "player1-down-btn",
+          rightButtonId: "player1-up-btn",
+          onLeftClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "s" });
+              keyDownHandler(event);
+            }
+          },
+          onRightClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "w" });
+              keyDownHandler(event);
+            }
+          },
+          className: "-mb-10",
+        });
+        gameContainer.appendChild(player1Controls);
+      }
+
       // Create or update game component
       if (!gameComponent) {
         gameComponent = Game({ gameState });
@@ -56,7 +81,7 @@ export function Local(): HTMLElement {
 
       // Instructions
       const instructions = document.createElement("div");
-      instructions.className = "mt-4 text-center text-gray-600";
+      instructions.className = "text-center text-gray-600";
       instructions.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
           <div class="mb-4">
@@ -69,7 +94,33 @@ export function Local(): HTMLElement {
           </div>
         </div>
       `;
-      gameContainer.appendChild(instructions);
+
+      let player2Controls: HTMLElement | null = null;
+      if (isMobile()) {
+        player2Controls = PlayerControls({
+          leftButtonId: "arrow-down-btn",
+          rightButtonId: "arrow-up-btn",
+          onLeftClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "ArrowDown" });
+              keyDownHandler(event);
+            }
+          },
+          onRightClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "ArrowUp" });
+              keyDownHandler(event);
+            }
+          },
+          className: "mt-4",
+          innerClassName: "-mt-10",
+        });
+        gameContainer.appendChild(player2Controls);
+      }
+
+      if (!isMobile()) {
+        gameContainer.appendChild(instructions);
+      }
 
       container.appendChild(gameContainer);
       setupKeyboardControls();

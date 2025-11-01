@@ -1,4 +1,4 @@
-import { getDarkMode } from "../lib/utils";
+import { getDarkMode, isMobile } from "../lib/utils";
 
 // Constants matching GameService
 const PADDLE_WIDTH = 10;
@@ -173,6 +173,17 @@ export function Game({ gameState }: GameProps): HTMLElement {
   container.appendChild(canvas);
   if (gameEndedMessage) {
     container.appendChild(gameEndedMessage);
+  }
+
+  // If mobile, wrap in rotated container
+  if (isMobile()) {
+    const rotatedWrapper = document.createElement("div");
+    rotatedWrapper.style.transform = "rotate(90deg) scale(0.5)";
+    rotatedWrapper.style.transformOrigin = "center center";
+    rotatedWrapper.appendChild(container);
+    // Also store update function on wrapper for external access
+    (rotatedWrapper as HTMLElement & { update?: (state: GameState) => void }).update = update;
+    return rotatedWrapper;
   }
 
   return container;

@@ -1,4 +1,6 @@
 import { Game, type GameState } from "../../game/Game";
+import { isMobile } from "../../lib/utils";
+import { PlayerControls } from "../ui/PlayerControls";
 
 export interface TournamentGameProps {
   player1: string;
@@ -54,6 +56,29 @@ export function TournamentGame({
       `;
       gameContainer.appendChild(playerInfo);
 
+      // Player1 mobile controls (top)
+      let player1Controls: HTMLElement | null = null;
+      if (isMobile()) {
+        player1Controls = PlayerControls({
+          leftButtonId: "tournament-player1-down-btn",
+          rightButtonId: "tournament-player1-up-btn",
+          onLeftClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "s" });
+              keyDownHandler(event);
+            }
+          },
+          onRightClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "w" });
+              keyDownHandler(event);
+            }
+          },
+          className: "-mb-10",
+        });
+        gameContainer.appendChild(player1Controls);
+      }
+
       // Create or update game component
       if (!gameComponent) {
         gameComponent = Game({ gameState });
@@ -77,7 +102,33 @@ export function TournamentGame({
           </div>
         </div>
       `;
-      gameContainer.appendChild(instructions);
+
+      let player2Controls: HTMLElement | null = null;
+      if (isMobile()) {
+        player2Controls = PlayerControls({
+          leftButtonId: "tournament-arrow-down-btn",
+          rightButtonId: "tournament-arrow-up-btn",
+          onLeftClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "ArrowDown" });
+              keyDownHandler(event);
+            }
+          },
+          onRightClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "ArrowUp" });
+              keyDownHandler(event);
+            }
+          },
+          className: "mt-4",
+          innerClassName: "-mt-10",
+        });
+        gameContainer.appendChild(player2Controls);
+      }
+
+      if (!isMobile()) {
+        gameContainer.appendChild(instructions);
+      }
 
       container.appendChild(gameContainer);
       setupKeyboardControls();

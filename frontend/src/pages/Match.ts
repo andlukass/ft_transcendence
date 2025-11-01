@@ -1,5 +1,7 @@
 import { TournamentWinner } from "../components/tournament/TournamentWinner";
+import { PlayerControls } from "../components/ui/PlayerControls";
 import { Game, type GameState } from "../game/Game";
+import { isMobile } from "../lib/utils";
 
 let ws: WebSocket | null = null;
 
@@ -52,13 +54,40 @@ export function Match(): HTMLElement {
       }
       gameContainer.appendChild(gameComponent);
 
+      // Mobile controls (single pair)
+      let playerControls: HTMLElement | null = null;
+      if (isMobile()) {
+        playerControls = PlayerControls({
+          leftButtonId: "match-down-btn",
+          rightButtonId: "match-up-btn",
+          onLeftClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "ArrowDown" });
+              keyDownHandler(event);
+            }
+          },
+          onRightClick: () => {
+            if (keyDownHandler) {
+              const event = new KeyboardEvent("keydown", { key: "ArrowUp" });
+              keyDownHandler(event);
+            }
+          },
+          className: "mt-4",
+          innerClassName: "-mt-10",
+        });
+        gameContainer.appendChild(playerControls);
+      }
+
       // Instructions
       const instructions = document.createElement("div");
       instructions.className = "mt-4 text-center text-gray-600";
       instructions.innerHTML = `
         <p class="text-sm">Use arrow keys or W/S to move your paddle</p>
       `;
-      gameContainer.appendChild(instructions);
+
+      if (!isMobile()) {
+        gameContainer.appendChild(instructions);
+      }
 
       container.appendChild(gameContainer);
       setupKeyboardControls();
