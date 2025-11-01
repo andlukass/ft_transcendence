@@ -1,4 +1,5 @@
 import { TournamentWinner } from "../components/tournament/TournamentWinner";
+import { Game, type GameState } from "../game/Game";
 
 let ws: WebSocket | null = null;
 
@@ -11,6 +12,9 @@ export function Match(): HTMLElement {
   let isConnected = false;
   let error: string | null = null;
   let winner: string | null = null;
+  let gameState: GameState | null = null;
+  let gameComponent: (HTMLElement & { update?: (state: GameState) => void }) | null = null;
+  let keyDownHandler: ((e: KeyboardEvent) => void) | null = null;
 
   const updateView = () => {
     if (winner) {
@@ -20,6 +24,44 @@ export function Match(): HTMLElement {
       const winnerComp = TournamentWinner(winner);
       innerDiv.appendChild(winnerComp);
       container.appendChild(innerDiv);
+      gameComponent = null;
+      return;
+    }
+
+    // Show game if we have gameState
+    if (gameState && matchId) {
+      container.innerHTML = "";
+      const gameContainer = document.createElement("div");
+      gameContainer.className = "flex flex-col items-center";
+
+      // Player info
+      const playerInfo = document.createElement("div");
+      playerInfo.className = "mb-4 text-center";
+      playerInfo.innerHTML = `
+        <p class="text-gray-600 mb-2">Player: <span class="font-semibold text-gray-900">${playerName}</span></p>
+        <p class="text-sm text-gray-500">Match ID: ${matchId}</p>
+        <p class="text-sm text-green-600 mt-2">🟢 Connected</p>
+      `;
+      gameContainer.appendChild(playerInfo);
+
+      // Create or update game component
+      if (!gameComponent) {
+        gameComponent = Game({ gameState });
+      } else if (gameComponent.update) {
+        gameComponent.update(gameState);
+      }
+      gameContainer.appendChild(gameComponent);
+
+      // Instructions
+      const instructions = document.createElement("div");
+      instructions.className = "mt-4 text-center text-gray-600";
+      instructions.innerHTML = `
+        <p class="text-sm">Use arrow keys or W/S to move your paddle</p>
+      `;
+      gameContainer.appendChild(instructions);
+
+      container.appendChild(gameContainer);
+      setupKeyboardControls();
       return;
     }
 
@@ -96,6 +138,32 @@ export function Match(): HTMLElement {
     }
   };
 
+  const setupKeyboardControls = () => {
+    // Remove existing listener if any
+    if (keyDownHandler) {
+      window.removeEventListener("keydown", keyDownHandler);
+    }
+
+    keyDownHandler = (e: KeyboardEvent) => {
+      if (!ws || !isConnected) return;
+
+      let move: "up" | "down" | null = null;
+
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        move = "up";
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+        move = "down";
+      }
+
+      if (move) {
+        e.preventDefault();
+        ws.send(JSON.stringify({ type: "movePlayer", move }));
+      }
+    };
+
+    window.addEventListener("keydown", keyDownHandler);
+  };
+
   const connectToMatch = () => {
     if (!playerName.trim()) {
       error = "Player name is required";
@@ -136,6 +204,13 @@ export function Match(): HTMLElement {
             winner = data.winner;
             console.log("Winner:", data.winner);
             updateView();
+          } else if (data.type === "gameState" && data.gameState) {
+            gameState = data.gameState;
+            if (gameComponent?.update && gameState) {
+              gameComponent.update(gameState);
+            } else {
+              updateView();
+            }
           }
         } catch (err) {
           console.error("Error parsing message:", err);
@@ -169,6 +244,12 @@ export function Match(): HTMLElement {
     if (ws) {
       ws.close();
       ws = null;
+    }
+    gameComponent = null;
+    gameState = null;
+    if (keyDownHandler) {
+      window.removeEventListener("keydown", keyDownHandler);
+      keyDownHandler = null;
     }
   };
 

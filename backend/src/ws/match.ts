@@ -33,7 +33,20 @@ export default async function (fastify: FastifyInstance) {
     conn.send(JSON.stringify({ matchId, playerName } as MatchResponse));
 
     conn.on("message", (_raw: Buffer) => {
-      // processa comandos posteriores
+      const match = matchesService.getMatch(matchId);
+      if (!match) {
+        conn.close(1011, "Match not found");
+        return;
+      }
+
+      const message = JSON.parse(_raw.toString());
+      if (message.type === "movePlayer") {
+        if (message.move !== "up" && message.move !== "down") {
+          conn.close(1011, "Invalid move");
+          return;
+        }
+        match.movePlayer(formattedPlayerName, message.move);
+      }
     });
 
     conn.on("close", () => {

@@ -1,6 +1,5 @@
 import type * as WebSocket from "ws";
-
-type GameState = {};
+import { GameService, GameState } from "./GameService";
 
 export interface Player {
   name: string;
@@ -11,8 +10,8 @@ export interface Player {
 export class MatchService {
   readonly matchId: string;
   private players: Player[] = [];
-  private init: Date | null = null;
   private winner?: string;
+  private game: GameService | null = null;
 
   constructor(matchId: string) {
     this.matchId = matchId;
@@ -20,10 +19,6 @@ export class MatchService {
 
   addPlayer(player: Player): void {
     this.players.push(player);
-  }
-
-  getInit(): Date | null {
-    return this.init;
   }
 
   getWinner(): string | undefined {
@@ -45,9 +40,31 @@ export class MatchService {
     return true;
   }
 
-  initMatch(): void {
-    this.init = new Date();
+  movePlayer(name: string, move: "up" | "down"): void {
+    if (!this.game) return;
+    const playerIndex = this.players.findIndex((player) => player.name === name);
+    if (playerIndex === -1) return;
+    const side = playerIndex === 0 ? "left" : "right";
+    this.game.updatePaddle(side, move);
+  }
+
+  getGameState(): GameState | null {
+    if (!this.game) return null;
+    return this.game.getGameState();
+  }
+
+  async initMatch(): Promise<void> {
+    this.game = new GameService();
     console.log(`Match ${this.matchId} initialized with 2 players`);
+
+    while (!this.game.getGameState().isEnded) {
+      for (const player of this.players) {
+        player.conn.send(
+          JSON.stringify({ type: "gameState", gameState: this.game.getGameState() })
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
   }
 
   endMatch(winnerName: string): void {
@@ -55,7 +72,9 @@ export class MatchService {
     for (const player of this.players) {
       player.conn.send(JSON.stringify({ type: "winner", winner: winnerName }));
     }
-
+    if (this.game) {
+      this.game.endGame();
+    }
     this.winner = winnerName;
     console.log(`Match ${this.matchId} ended. Winner: ${winnerName}`);
   }
