@@ -8,7 +8,7 @@ const BALL_RADIUS = 10;
 const GAME_WIDTH = 1000;
 const GAME_HEIGHT = 500;
 
-export const MAX_SCORE = 1;
+export const MAX_SCORE = 100;
 
 export type Paddle = {
   x: number;
