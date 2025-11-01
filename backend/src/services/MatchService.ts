@@ -63,6 +63,7 @@ export class MatchService {
           JSON.stringify({ type: "gameState", gameState: this.game.getGameState() })
         );
       }
+      this.game.updateBall();
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
   }
