@@ -1,6 +1,6 @@
 import type * as WebSocket from "ws";
 import type { GameState } from "./GameService";
-import { GameService } from "./GameService";
+import { GameService, MAX_SCORE } from "./GameService";
 
 export interface Player {
   name: string;
@@ -59,11 +59,11 @@ export class MatchService {
     console.log(`Match ${this.matchId} initialized with 2 players`);
 
     while (!this.game.getGameState().isEnded) {
-      if (this.game.getGameState().score.left === 7) {
+      if (this.game.getGameState().score.left === MAX_SCORE) {
         this.endMatch(this.players[0].name);
         return;
       }
-      if (this.game.getGameState().score.right === 7) {
+      if (this.game.getGameState().score.right === MAX_SCORE) {
         this.endMatch(this.players[1].name);
         return;
       }
@@ -81,6 +81,7 @@ export class MatchService {
     // Send winner to all players of the match
     for (const player of this.players) {
       player.conn.send(JSON.stringify({ type: "winner", winner: winnerName }));
+      player.conn.close();
     }
     if (this.game) {
       this.game.endGame();
