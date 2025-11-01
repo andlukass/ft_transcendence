@@ -1,5 +1,6 @@
 import type * as WebSocket from "ws";
-import { GameService, GameState } from "./GameService";
+import type { GameState } from "./GameService";
+import { GameService } from "./GameService";
 
 export interface Player {
   name: string;
@@ -58,6 +59,14 @@ export class MatchService {
     console.log(`Match ${this.matchId} initialized with 2 players`);
 
     while (!this.game.getGameState().isEnded) {
+      if (this.game.getGameState().score.left === 7) {
+        this.endMatch(this.players[0].name);
+        return;
+      }
+      if (this.game.getGameState().score.right === 7) {
+        this.endMatch(this.players[1].name);
+        return;
+      }
       for (const player of this.players) {
         player.conn.send(
           JSON.stringify({ type: "gameState", gameState: this.game.getGameState() })

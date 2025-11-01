@@ -1,8 +1,8 @@
 const PADDLE_WIDTH = 10;
 const PADDLE_HEIGHT = 100;
 
-const PADDLE_SPEED = 20;
-const BALL_SPEED = 10;
+const PADDLE_SPEED = 40;
+const BALL_SPEED = 20;
 const BALL_RADIUS = 10;
 
 const GAME_WIDTH = 1000;
